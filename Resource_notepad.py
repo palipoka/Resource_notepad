@@ -3,9 +3,10 @@ import json
 import tkinter as tk
 from tkinter import messagebox
 
-# Файлы для параметров и логов
+# Файлы для параметров, логов и заметок
 params_file = "parameters.json"
 log_file = "log.txt"
+notes_file = "note.json"
 
 # Загрузка параметров из файла
 try:
@@ -24,6 +25,15 @@ except FileNotFoundError:
     with open(params_file, "w", encoding="utf-8") as f:
         json.dump(parameters, f, ensure_ascii=False, indent=4)
 
+# Загрузка заметок из файла
+try:
+    with open(notes_file, "r", encoding="utf-8") as f:
+        notes = json.load(f)
+except FileNotFoundError:
+    notes = {"notes": ""}  # Если файл отсутствует, создаём пустую заметку
+    with open(notes_file, "w", encoding="utf-8") as f:
+        json.dump(notes, f, ensure_ascii=False, indent=4)
+
 # Сохраняем исходный порядок параметров
 parameter_order = list(parameters.keys())
 
@@ -31,6 +41,11 @@ parameter_order = list(parameters.keys())
 def save_parameters():
     with open(params_file, "w", encoding="utf-8") as f:
         json.dump(parameters, f, ensure_ascii=False, indent=4)
+
+# Функция для сохранения заметок в файл
+def save_notes():
+    with open(notes_file, "w", encoding="utf-8") as f:
+        json.dump(notes, f, ensure_ascii=False, indent=4)
 
 # Функция для записи логов
 def log_change(param, old_value, new_value):
@@ -113,6 +128,27 @@ def display_parameters():
         tk.Button(param_frame, text="Количество", command=lambda k=key: edit_parameter(k)).pack(side=tk.LEFT, padx=5)
         tk.Button(param_frame, text="Имя", command=lambda k=key: edit_parameter_name(k)).pack(side=tk.LEFT, padx=5)
 
+# Функция для открытия окна с заметками
+def open_notes_window():
+    notes_window = tk.Toplevel()
+    notes_window.title("Заметки")
+
+    # Текстовое поле для заметок
+    notes_text = tk.Text(notes_window, wrap=tk.WORD, width=50, height=20)
+    notes_text.pack(pady=10, padx=10)
+
+    # Загрузка текущих заметок в текстовое поле
+    notes_text.insert(tk.END, notes["notes"])
+
+    # Функция для сохранения заметок
+    def save_notes_and_close():
+        notes["notes"] = notes_text.get("1.0", tk.END)
+        save_notes()
+        notes_window.destroy()
+
+    # Кнопка для сохранения заметок
+    tk.Button(notes_window, text="Сохранить и закрыть", command=save_notes_and_close).pack(pady=10)
+
 # Основной интерфейс программы
 root = tk.Tk()
 root.title("Запоминалка ресурсов")
@@ -128,6 +164,7 @@ menu = tk.Menu(root)
 root.config(menu=menu)
 
 menu.add_command(label="Обновить данные", command=display_parameters)
+menu.add_command(label="Заметки", command=open_notes_window)
 menu.add_command(label="Выйти", command=root.quit)
 
 display_parameters()
